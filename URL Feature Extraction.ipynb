@@ -1,0 +1,2531 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "URL Feature Extraction.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "toc_visible": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "accelerator": "GPU"
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "x8WZXl8z-1VC",
+        "colab_type": "text"
+      },
+      "source": [
+        "# **Phishing Website Detection Feature Extraction**\n",
+        "\n",
+        "*Final project of AI & Cybersecurity Course*"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "SUwXaC2JiIMF",
+        "colab_type": "text"
+      },
+      "source": [
+        "# **1. Objective:**\n",
+        "A phishing website is a common social engineering method that mimics trustful uniform resource locators (URLs) and webpages. The objective of this notebook is to collect data & extract the selctive features form the URLs.\n",
+        "\n",
+        "*This project is worked on Google Collaboratory.*\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "pkIGg-nGiqEO",
+        "colab_type": "text"
+      },
+      "source": [
+        "# **2. Collecting the Data:**\n",
+        "For this project, we need a bunch of urls of type legitimate (0) and phishing (1). \n",
+        "\n",
+        "The collection of phishing urls is rather easy because of the opensource service called PhishTank. This service provide a set of phishing URLs in multiple formats like csv, json etc. that gets updated hourly. To download the data: https://www.phishtank.com/developer_info.php\n",
+        "\n",
+        "For the legitimate URLs, I found a source that has a collection of benign, spam, phishing, malware & defacement URLs. The source of the dataset is University of New Brunswick, https://www.unb.ca/cic/datasets/url-2016.html. The number of legitimate URLs in this collection are 35,300. The URL collection is downloaded & from that, *'Benign_list_big_final.csv'* is the file of our interest. This file is then uploaded to the Colab for the feature extraction. \n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "SRyCQJnSmACu",
+        "colab_type": "text"
+      },
+      "source": [
+        "## **2.1. Phishing URLs:**\n",
+        "\n",
+        "The phishing URLs are collected from the PhishTank from the link provided. The csv file of phishing URLs is obtained by using wget command. After downlaoding the dataset, it is loaded into a DataFrame."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "PH13wfswmyDv",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "#importing required packages for this module\n",
+        "import pandas as pd"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "FF5vM84YriWc",
+        "colab_type": "code",
+        "outputId": "34b29509-57f2-48c9-a862-db8390b6af1c",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 392
+        }
+      },
+      "source": [
+        "#Downloading the phishing URLs file\n",
+        "!wget http://data.phishtank.com/data/online-valid.csv"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "--2020-05-10 07:33:37--  http://data.phishtank.com/data/online-valid.csv\n",
+            "Resolving data.phishtank.com (data.phishtank.com)... 104.16.101.75, 104.17.177.85, 2606:4700::6810:654b, ...\n",
+            "Connecting to data.phishtank.com (data.phishtank.com)|104.16.101.75|:80... connected.\n",
+            "HTTP request sent, awaiting response... 301 Moved Permanently\n",
+            "Location: https://data.phishtank.com/data/online-valid.csv [following]\n",
+            "--2020-05-10 07:33:37--  https://data.phishtank.com/data/online-valid.csv\n",
+            "Connecting to data.phishtank.com (data.phishtank.com)|104.16.101.75|:443... connected.\n",
+            "HTTP request sent, awaiting response... 302 Found\n",
+            "Location: https://d1750zhbc38ec0.cloudfront.net/datadumps/verified_online.csv?Expires=1589096027&Signature=NeznemrBS2h3ozoDsM8x9fZ73pTe1OhCjCyYEEtKcqjyJlO62TdCD9eAh4tC0fvlytZAq4ihqhtRGtgkwaWfw6QJE8HhE-UfnzUlOxU6w-lnHJppNbsbWsIqCjYeBoNbGvLTpa4CklK5Lo7PV6vd3bSl8wAq0PNjyct7f6qyO2nazZilc0NIdzHp2t-XwAozQj39S7czLORAzloGH98cqa1XBc3honvarNeV3S6d8QJCO8dHf3zk201KUSJFRIky6sFZP3--z5aDSL06fZj-yAyIDE-Xn0SNaiqLFVuMQUx0tTo5eIdk98zC2D7R5XOvAkGdpo1fGHT45f77MzUv4Q__&Key-Pair-Id=APKAILB45UG3RB4CSOJA [following]\n",
+            "--2020-05-10 07:33:37--  https://d1750zhbc38ec0.cloudfront.net/datadumps/verified_online.csv?Expires=1589096027&Signature=NeznemrBS2h3ozoDsM8x9fZ73pTe1OhCjCyYEEtKcqjyJlO62TdCD9eAh4tC0fvlytZAq4ihqhtRGtgkwaWfw6QJE8HhE-UfnzUlOxU6w-lnHJppNbsbWsIqCjYeBoNbGvLTpa4CklK5Lo7PV6vd3bSl8wAq0PNjyct7f6qyO2nazZilc0NIdzHp2t-XwAozQj39S7czLORAzloGH98cqa1XBc3honvarNeV3S6d8QJCO8dHf3zk201KUSJFRIky6sFZP3--z5aDSL06fZj-yAyIDE-Xn0SNaiqLFVuMQUx0tTo5eIdk98zC2D7R5XOvAkGdpo1fGHT45f77MzUv4Q__&Key-Pair-Id=APKAILB45UG3RB4CSOJA\n",
+            "Resolving d1750zhbc38ec0.cloudfront.net (d1750zhbc38ec0.cloudfront.net)... 143.204.101.142, 143.204.101.147, 143.204.101.48, ...\n",
+            "Connecting to d1750zhbc38ec0.cloudfront.net (d1750zhbc38ec0.cloudfront.net)|143.204.101.142|:443... connected.\n",
+            "HTTP request sent, awaiting response... 200 OK\n",
+            "Length: 3232768 (3.1M) [text/csv]\n",
+            "Saving to: ‘online-valid.csv’\n",
+            "\n",
+            "online-valid.csv    100%[===================>]   3.08M  5.13MB/s    in 0.6s    \n",
+            "\n",
+            "2020-05-10 07:33:38 (5.13 MB/s) - ‘online-valid.csv’ saved [3232768/3232768]\n",
+            "\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "paesHH9rnX8r",
+        "colab_type": "text"
+      },
+      "source": [
+        "The above command downlaods the file of phishing URLs, *online-valid.csv* and stores in the */content/* folder. "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GaGVL9gYKXma",
+        "colab_type": "code",
+        "outputId": "fad0a947-4996-44bf-d46f-89abc4306e62",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 305
+        }
+      },
+      "source": [
+        "#loading the phishing URLs data to dataframe\n",
+        "data0 = pd.read_csv(\"online-valid.csv\")\n",
+        "data0.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>phish_id</th>\n",
+              "      <th>url</th>\n",
+              "      <th>phish_detail_url</th>\n",
+              "      <th>submission_time</th>\n",
+              "      <th>verified</th>\n",
+              "      <th>verification_time</th>\n",
+              "      <th>online</th>\n",
+              "      <th>target</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>6557033</td>\n",
+              "      <td>http://u1047531.cp.regruhosting.ru/acces-inges...</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-05-09T22:01:43+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-05-09T22:03:07+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Other</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>6557032</td>\n",
+              "      <td>http://hoysalacreations.com/wp-content/plugins...</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-05-09T22:01:37+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-05-09T22:03:07+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Other</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>6557011</td>\n",
+              "      <td>http://www.accsystemprblemhelp.site/checkpoint...</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-05-09T21:54:31+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-05-09T21:55:38+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Facebook</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>6557010</td>\n",
+              "      <td>http://www.accsystemprblemhelp.site/login_atte...</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-05-09T21:53:48+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-05-09T21:54:34+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Facebook</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>6557009</td>\n",
+              "      <td>https://firebasestorage.googleapis.com/v0/b/so...</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-05-09T21:49:27+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-05-09T21:51:24+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Microsoft</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "   phish_id  ...     target\n",
+              "0   6557033  ...      Other\n",
+              "1   6557032  ...      Other\n",
+              "2   6557011  ...   Facebook\n",
+              "3   6557010  ...   Facebook\n",
+              "4   6557009  ...  Microsoft\n",
+              "\n",
+              "[5 rows x 8 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 3
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "mAZAvSe2n1oT",
+        "colab_type": "code",
+        "outputId": "da2fbbb6-871f-4070-df86-cc9a135ac37a",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "data0.shape"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(14858, 8)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 4
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "fBFvH8h0oFkO",
+        "colab_type": "text"
+      },
+      "source": [
+        "So, the data has thousands of phishing URLs. But the problem here is, this data gets updated hourly. Without getting into the risk of data imbalance, I am considering a margin value of 10,000 phishing URLs & 5000 legitimate URLs. \n",
+        "\n",
+        "Thereby, picking up 5000 samples from the above dataframe randomly."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "9CTCI_EgERPM",
+        "colab_type": "code",
+        "outputId": "cb74e74c-5591-4523-e077-bbf13ef89245",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 305
+        }
+      },
+      "source": [
+        "#Collecting 5,000 Phishing URLs randomly\n",
+        "phishurl = data0.sample(n = 5000, random_state = 12).copy()\n",
+        "phishurl = phishurl.reset_index(drop=True)\n",
+        "phishurl.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>phish_id</th>\n",
+              "      <th>url</th>\n",
+              "      <th>phish_detail_url</th>\n",
+              "      <th>submission_time</th>\n",
+              "      <th>verified</th>\n",
+              "      <th>verification_time</th>\n",
+              "      <th>online</th>\n",
+              "      <th>target</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>6485787</td>\n",
+              "      <td>https://eevee.tv/Bootstrap/assets/css/acces</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-04-04T03:01:00+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-04-04T03:03:56+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Other</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>6422543</td>\n",
+              "      <td>https://appleid.apple.com-sa.pm/appleid/?</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-02-27T17:01:01+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-03-17T01:50:51+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Other</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>6543602</td>\n",
+              "      <td>https://grandcup.xyz/</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-05-02T23:07:29+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-05-02T23:09:03+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Steam</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>6528783</td>\n",
+              "      <td>https://villa-azzurro.com/onedrive/</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-04-25T20:54:02+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-04-25T21:46:55+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Other</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>6498136</td>\n",
+              "      <td>http://mygpstrip.net/ii/u.php</td>\n",
+              "      <td>http://www.phishtank.com/phish_detail.php?phis...</td>\n",
+              "      <td>2020-04-10T15:01:56+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>2020-04-10T16:01:37+00:00</td>\n",
+              "      <td>yes</td>\n",
+              "      <td>Other</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "   phish_id                                          url  ... online target\n",
+              "0   6485787  https://eevee.tv/Bootstrap/assets/css/acces  ...    yes  Other\n",
+              "1   6422543    https://appleid.apple.com-sa.pm/appleid/?  ...    yes  Other\n",
+              "2   6543602                        https://grandcup.xyz/  ...    yes  Steam\n",
+              "3   6528783          https://villa-azzurro.com/onedrive/  ...    yes  Other\n",
+              "4   6498136                http://mygpstrip.net/ii/u.php  ...    yes  Other\n",
+              "\n",
+              "[5 rows x 8 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 5
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "-FOfv0bspc8N",
+        "colab_type": "code",
+        "outputId": "48e76e11-37d7-4ba1-e04a-c2fa661e9219",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "phishurl.shape"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(5000, 8)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 6
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Sb4afcd5pges",
+        "colab_type": "text"
+      },
+      "source": [
+        "As of now we collected 5000 phishing URLs. Now, we need to collect the legitimate URLs.\n",
+        "\n",
+        "## **2.2. Legitimate URLs:**\n",
+        "\n",
+        "From the uploaded *Benign_list_big_final.csv* file, the URLs are loaded into a dataframe."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "0wkw4wGAsIbT",
+        "colab_type": "code",
+        "outputId": "4395a2bd-dd8b-49ea-fb1e-36cf0b67e75f",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 200
+        }
+      },
+      "source": [
+        "#Loading legitimate files \n",
+        "data1 = pd.read_csv(\"Benign_list_big_final.csv\")\n",
+        "data1.columns = ['URLs']\n",
+        "data1.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>URLs</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>http://1337x.to/torrent/1110018/Blackhat-2015-...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>http://1337x.to/torrent/1122940/Blackhat-2015-...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>http://1337x.to/torrent/1124395/Fast-and-Furio...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>http://1337x.to/torrent/1145504/Avengers-Age-o...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>http://1337x.to/torrent/1160078/Avengers-age-o...</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                                                URLs\n",
+              "0  http://1337x.to/torrent/1110018/Blackhat-2015-...\n",
+              "1  http://1337x.to/torrent/1122940/Blackhat-2015-...\n",
+              "2  http://1337x.to/torrent/1124395/Fast-and-Furio...\n",
+              "3  http://1337x.to/torrent/1145504/Avengers-Age-o...\n",
+              "4  http://1337x.to/torrent/1160078/Avengers-age-o..."
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 7
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "MdvE4YfWtCJr",
+        "colab_type": "text"
+      },
+      "source": [
+        "As stated above, 5000 legitimate URLs are randomaly picked from the above dataframe."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "EQRtf9Ybs5sv",
+        "colab_type": "code",
+        "outputId": "227e262b-1483-4549-8bdf-49da2f321b06",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 200
+        }
+      },
+      "source": [
+        "#Collecting 5,000 Legitimate URLs randomly\n",
+        "legiurl = data1.sample(n = 5000, random_state = 12).copy()\n",
+        "legiurl = legiurl.reset_index(drop=True)\n",
+        "legiurl.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>URLs</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>http://graphicriver.net/search?date=this-month...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>http://ecnavi.jp/redirect/?url=http://www.cros...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>https://hubpages.com/signin?explain=follow+Hub...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>http://extratorrent.cc/torrent/4190536/AOMEI+B...</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>http://icicibank.com/Personal-Banking/offers/o...</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                                                URLs\n",
+              "0  http://graphicriver.net/search?date=this-month...\n",
+              "1  http://ecnavi.jp/redirect/?url=http://www.cros...\n",
+              "2  https://hubpages.com/signin?explain=follow+Hub...\n",
+              "3  http://extratorrent.cc/torrent/4190536/AOMEI+B...\n",
+              "4  http://icicibank.com/Personal-Banking/offers/o..."
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 8
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "QrpSRXzDuKwW",
+        "colab_type": "code",
+        "outputId": "8b8e5220-be59-4893-9dd5-3ffc381d2b1d",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "legiurl.shape"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(5000, 1)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 9
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "xbzZbsWIEV6J",
+        "colab_type": "text"
+      },
+      "source": [
+        "# **3. Feature Extraction:**\n",
+        "\n",
+        "In this step, features are extracted from the URLs dataset.\n",
+        "\n",
+        "The extracted features are categorized into\n",
+        "\n",
+        "\n",
+        "1.   Address Bar based Features\n",
+        "2.   Domain based Features\n",
+        "3.   HTML & Javascript based Features\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "vABNo39RQljI",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **3.1. Address Bar Based Features:**\n",
+        "\n",
+        "Many features can be extracted that can be consided as address bar base features. Out of them, below mentioned were considered for this project.\n",
+        "\n",
+        "\n",
+        "*   Domain of URL\n",
+        "*   IP Address in URL\n",
+        "*   \"@\" Symbol in URL\n",
+        "*   Length of URL\n",
+        "*   Depth of URL\n",
+        "*   Redirection \"//\" in URL\n",
+        "*   \"http/https\" in Domain name\n",
+        "*   Using URL Shortening Services “TinyURL”\n",
+        "*   Prefix or Suffix \"-\" in Domain\n",
+        "\n",
+        "Each of these features are explained and the coded below:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "Rk4HFWsEKXpS",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# importing required packages for this section\n",
+        "from urllib.parse import urlparse,urlencode\n",
+        "import ipaddress\n",
+        "import re"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "xd-UZd3c60-a",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.1. Domain of the URL**\n",
+        "Here, we are just extracting the domain present in the URL. This feature doesn't have much significance in the training. May even be dropped while training the model."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "S0QorYenhaOD",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 1.Domain of the URL (Domain) \n",
+        "def getDomain(url):  \n",
+        "  domain = urlparse(url).netloc\n",
+        "  if re.match(r\"^www.\",domain):\n",
+        "\t       domain = domain.replace(\"www.\",\"\")\n",
+        "  return domain"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "1EPO6HJ87Pdv",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.2. IP Address in the URL**\n",
+        "\n",
+        "Checks for the presence of IP address in the URL. URLs may have IP address instead of domain name. If an IP address is used as an alternative of the domain name in the URL, we can be sure that someone is trying to steal personal information with this URL.\n",
+        "\n",
+        "If the domain part of URL has IP address, the value assigned to this feature is 1 (phishing) or else 0 (legitimate).\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "SX-4mbq27QBj",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 2.Checks for IP address in URL (Have_IP)\n",
+        "def havingIP(url):\n",
+        "  try:\n",
+        "    ipaddress.ip_address(url)\n",
+        "    ip = 1\n",
+        "  except:\n",
+        "    ip = 0\n",
+        "  return ip\n"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Vcy-zay47S-q",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.3. \"@\" Symbol in URL**\n",
+        "\n",
+        "Checks for the presence of '@' symbol in the URL. Using “@” symbol in the URL leads the browser to ignore everything preceding the “@” symbol and the real address often follows the “@” symbol. \n",
+        "\n",
+        "If the URL has '@' symbol, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "XZQZi3K17TcR",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 3.Checks the presence of @ in URL (Have_At)\n",
+        "def haveAtSign(url):\n",
+        "  if \"@\" in url:\n",
+        "    at = 1    \n",
+        "  else:\n",
+        "    at = 0    \n",
+        "  return at"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "mhFeCv2N9KLU",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.4. Length of URL**\n",
+        "\n",
+        "Computes the length of the URL. Phishers can use long URL to hide the doubtful part in the address bar. In this project, if the length of the URL is greater than or equal 54 characters then the URL classified as phishing otherwise legitimate.\n",
+        "\n",
+        "If the length of URL >= 54 , the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "fnQazil39Kra",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 4.Finding the length of URL and categorizing (URL_Length)\n",
+        "def getLength(url):\n",
+        "  if len(url) < 54:\n",
+        "    length = 0            \n",
+        "  else:\n",
+        "    length = 1            \n",
+        "  return length"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "8ICyOWg59LHt",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.5. Depth of URL**\n",
+        "\n",
+        "Computes the depth of the URL. This feature calculates the number of sub pages in the given url based on the '/'.\n",
+        "\n",
+        "The value of feature is a numerical based on the URL."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "yILgNFf_9L3X",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 5.Gives number of '/' in URL (URL_Depth)\n",
+        "def getDepth(url):\n",
+        "  s = urlparse(url).path.split('/')\n",
+        "  depth = 0\n",
+        "  for j in range(len(s)):\n",
+        "    if len(s[j]) != 0:\n",
+        "      depth = depth+1\n",
+        "  return depth"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "T5-eL0bBBRdx",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.6. Redirection \"//\" in URL**\n",
+        "\n",
+        "Checks the presence of \"//\" in the URL. The existence of “//” within the URL path means that the user will be redirected to another website. The location of the “//” in URL is computed. We find that if the URL starts with “HTTP”, that means the “//” should appear in the sixth position. However, if the URL employs “HTTPS” then the “//” should appear in seventh position.\n",
+        "\n",
+        "If the \"//\" is anywhere in the URL apart from after the protocal, thee value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "RIJEiq51BSy0",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 6.Checking for redirection '//' in the url (Redirection)\n",
+        "def redirection(url):\n",
+        "  pos = url.rfind('//')\n",
+        "  if pos > 6:\n",
+        "    if pos > 7:\n",
+        "      return 1\n",
+        "    else:\n",
+        "      return 0\n",
+        "  else:\n",
+        "    return 0"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "hHWQDIrtBa7n",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.7. \"http/https\" in Domain name**\n",
+        "\n",
+        "Checks for the presence of \"http/https\" in the domain part of the URL. The phishers may add the “HTTPS” token to the domain part of a URL in order to trick users.\n",
+        "\n",
+        "If the URL has \"http/https\" in the domain part, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "h2vW23O1BbWl",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 7.Existence of “HTTPS” Token in the Domain Part of the URL (https_Domain)\n",
+        "def httpDomain(url):\n",
+        "  domain = urlparse(url).netloc\n",
+        "  if 'https' in domain:\n",
+        "    return 1\n",
+        "  else:\n",
+        "    return 0"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "rKL4jpeaPIvA",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.8. Using URL Shortening Services “TinyURL”**\n",
+        "\n",
+        "URL shortening is a method on the “World Wide Web” in which a URL may be made considerably smaller in length and still lead to the required webpage. This is accomplished by means of an “HTTP Redirect” on a domain name that is short, which links to the webpage that has a long URL. \n",
+        "\n",
+        "If the URL is using Shortening Services, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "UdC9pUdTAVRU",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "#listing shortening services\n",
+        "shortening_services = r\"bit\\.ly|goo\\.gl|shorte\\.st|go2l\\.ink|x\\.co|ow\\.ly|t\\.co|tinyurl|tr\\.im|is\\.gd|cli\\.gs|\" \\\n",
+        "                      r\"yfrog\\.com|migre\\.me|ff\\.im|tiny\\.cc|url4\\.eu|twit\\.ac|su\\.pr|twurl\\.nl|snipurl\\.com|\" \\\n",
+        "                      r\"short\\.to|BudURL\\.com|ping\\.fm|post\\.ly|Just\\.as|bkite\\.com|snipr\\.com|fic\\.kr|loopt\\.us|\" \\\n",
+        "                      r\"doiop\\.com|short\\.ie|kl\\.am|wp\\.me|rubyurl\\.com|om\\.ly|to\\.ly|bit\\.do|t\\.co|lnkd\\.in|db\\.tt|\" \\\n",
+        "                      r\"qr\\.ae|adf\\.ly|goo\\.gl|bitly\\.com|cur\\.lv|tinyurl\\.com|ow\\.ly|bit\\.ly|ity\\.im|q\\.gs|is\\.gd|\" \\\n",
+        "                      r\"po\\.st|bc\\.vc|twitthis\\.com|u\\.to|j\\.mp|buzurl\\.com|cutt\\.us|u\\.bb|yourls\\.org|x\\.co|\" \\\n",
+        "                      r\"prettylinkpro\\.com|scrnch\\.me|filoops\\.info|vzturl\\.com|qr\\.net|1url\\.com|tweez\\.me|v\\.gd|\" \\\n",
+        "                      r\"tr\\.im|link\\.zip\\.net\""
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "IUkU9UbbnKpY",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 8. Checking for Shortening Services in URL (Tiny_URL)\n",
+        "def tinyURL(url):\n",
+        "    match=re.search(shortening_services,url)\n",
+        "    if match:\n",
+        "        return 1\n",
+        "    else:\n",
+        "        return 0"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "HS-BuQJzPkaZ",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.1.9. Prefix or Suffix \"-\" in Domain**\n",
+        "\n",
+        "Checking the presence of '-' in the domain part of URL. The dash symbol is rarely used in legitimate URLs. Phishers tend to add prefixes or suffixes separated by (-) to the domain name so that users feel that they are dealing with a legitimate webpage. \n",
+        "\n",
+        "If the URL has '-' symbol in the domain part of the URL, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "vLyjiIUgPjuw",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 9.Checking for Prefix or Suffix Separated by (-) in the Domain (Prefix/Suffix)\n",
+        "def prefixSuffix(url):\n",
+        "    if '-' in urlparse(url).netloc:\n",
+        "        return 1            # phishing\n",
+        "    else:\n",
+        "        return 0            # legitimate"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "zO485F_BPk-k",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **3.2. Domain Based Features:**\n",
+        "\n",
+        "Many features can be extracted that come under this category. Out of them, below mentioned were considered for this project.\n",
+        "\n",
+        "*   DNS Record\n",
+        "*   Website Traffic \n",
+        "*   Age of Domain\n",
+        "*   End Period of Domain\n",
+        "\n",
+        "Each of these features are explained and the coded below:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "NbkEYJ_JOVa7",
+        "colab_type": "code",
+        "outputId": "f08b25f8-3852-432c-e141-8eb57ff916d8",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 232
+        }
+      },
+      "source": [
+        "!pip install python-whois"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Collecting python-whois\n",
+            "\u001b[?25l  Downloading https://files.pythonhosted.org/packages/f0/ab/11c2d01db2554bbaabb2c32b06b6a73f7277372533484c320c78a304dfd7/python-whois-0.7.2.tar.gz (90kB)\n",
+            "\r\u001b[K     |███▋                            | 10kB 24.0MB/s eta 0:00:01\r\u001b[K     |███████▎                        | 20kB 6.5MB/s eta 0:00:01\r\u001b[K     |███████████                     | 30kB 6.8MB/s eta 0:00:01\r\u001b[K     |██████████████▋                 | 40kB 7.8MB/s eta 0:00:01\r\u001b[K     |██████████████████▏             | 51kB 7.6MB/s eta 0:00:01\r\u001b[K     |█████████████████████▉          | 61kB 8.6MB/s eta 0:00:01\r\u001b[K     |█████████████████████████▌      | 71kB 8.4MB/s eta 0:00:01\r\u001b[K     |█████████████████████████████▏  | 81kB 9.3MB/s eta 0:00:01\r\u001b[K     |████████████████████████████████| 92kB 5.5MB/s \n",
+            "\u001b[?25hRequirement already satisfied: future in /usr/local/lib/python3.6/dist-packages (from python-whois) (0.16.0)\n",
+            "Building wheels for collected packages: python-whois\n",
+            "  Building wheel for python-whois (setup.py) ... \u001b[?25l\u001b[?25hdone\n",
+            "  Created wheel for python-whois: filename=python_whois-0.7.2-cp36-none-any.whl size=85245 sha256=900afbc18f144913762a57978778098dda65b687b3b5a1f14f7998e9631564e8\n",
+            "  Stored in directory: /root/.cache/pip/wheels/69/e6/62/1e6a746ca8e690f472611511b6948c325b232aaf693245ce46\n",
+            "Successfully built python-whois\n",
+            "Installing collected packages: python-whois\n",
+            "Successfully installed python-whois-0.7.2\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "esZ7FcvlOMZu",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# importing required packages for this section\n",
+        "import re\n",
+        "from bs4 import BeautifulSoup\n",
+        "import whois\n",
+        "import urllib\n",
+        "import urllib.request\n",
+        "from datetime import datetime"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "4ExXkkXYZWWZ",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.2.1. DNS Record**\n",
+        "\n",
+        "For phishing websites, either the claimed identity is not recognized by the WHOIS database or no records founded for the hostname. \n",
+        "If the DNS record is empty or not found then, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "8O5D1jH0IDgf",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 11.DNS Record availability (DNS_Record)\n",
+        "# obtained in the featureExtraction function itself"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "M5DKTVPMZ1Yk",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.2.2. Web Traffic**\n",
+        "\n",
+        "This feature measures the popularity of the website by determining the number of visitors and the number of pages they visit. However, since phishing websites live for a short period of time, they may not be recognized by the Alexa database (Alexa the Web Information Company., 1996). By reviewing our dataset, we find that in worst scenarios, legitimate websites ranked among the top 100,000. Furthermore, if the domain has no traffic or is not recognized by the Alexa database, it is classified as “Phishing”.\n",
+        "\n",
+        "If the rank of the domain < 100000, the vlaue of this feature is 1 (phishing) else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "mtwQiRotZ2GD",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 12.Web traffic (Web_Traffic)\n",
+        "def web_traffic(url):\n",
+        "  try:\n",
+        "    #Filling the whitespaces in the URL if any\n",
+        "    url = urllib.parse.quote(url)\n",
+        "    rank = BeautifulSoup(urllib.request.urlopen(\"http://data.alexa.com/data?cli=10&dat=s&url=\" + url).read(), \"xml\").find(\n",
+        "        \"REACH\")['RANK']\n",
+        "    rank = int(rank)\n",
+        "  except TypeError:\n",
+        "        return 1\n",
+        "  if rank <100000:\n",
+        "    return 1\n",
+        "  else:\n",
+        "    return 0"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "jKHhfv2AacXq",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.2.3. Age of Domain**\n",
+        "\n",
+        "This feature can be extracted from WHOIS database. Most phishing websites live for a short period of time. The minimum age of the legitimate domain is considered to be 12 months for this project. Age here is nothing but different between creation and expiration time.\n",
+        "\n",
+        "If age of domain > 12 months, the vlaue of this feature is 1 (phishing) else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "li03hqJgH__j",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 13.Survival time of domain: The difference between termination time and creation time (Domain_Age)  \n",
+        "def domainAge(domain_name):\n",
+        "  creation_date = domain_name.creation_date\n",
+        "  expiration_date = domain_name.expiration_date\n",
+        "  if (isinstance(creation_date,str) or isinstance(expiration_date,str)):\n",
+        "    try:\n",
+        "      creation_date = datetime.strptime(creation_date,'%Y-%m-%d')\n",
+        "      expiration_date = datetime.strptime(expiration_date,\"%Y-%m-%d\")\n",
+        "    except:\n",
+        "      return 1\n",
+        "  if ((expiration_date is None) or (creation_date is None)):\n",
+        "      return 1\n",
+        "  elif ((type(expiration_date) is list) or (type(creation_date) is list)):\n",
+        "      return 1\n",
+        "  else:\n",
+        "    ageofdomain = abs((expiration_date - creation_date).days)\n",
+        "    if ((ageofdomain/30) < 6):\n",
+        "      age = 1\n",
+        "    else:\n",
+        "      age = 0\n",
+        "  return age"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "AbjRrzA7aenm",
+        "colab_type": "text"
+      },
+      "source": [
+        "#### **3.2.4. End Period of Domain**\n",
+        "\n",
+        "This feature can be extracted from WHOIS database. For this feature, the remaining domain time is calculated by finding the different between expiration time & current time. The end period considered for the legitimate domain is 6 months or less  for this project. \n",
+        "\n",
+        "If end period of domain > 6 months, the vlaue of this feature is 1 (phishing) else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "NueO81-ttKYd",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 14.End time of domain: The difference between termination time and current time (Domain_End) \n",
+        "def domainEnd(domain_name):\n",
+        "  expiration_date = domain_name.expiration_date\n",
+        "  if isinstance(expiration_date,str):\n",
+        "    try:\n",
+        "      expiration_date = datetime.strptime(expiration_date,\"%Y-%m-%d\")\n",
+        "    except:\n",
+        "      return 1\n",
+        "  if (expiration_date is None):\n",
+        "      return 1\n",
+        "  elif (type(expiration_date) is list):\n",
+        "      return 1\n",
+        "  else:\n",
+        "    today = datetime.now()\n",
+        "    end = abs((expiration_date - today).days)\n",
+        "    if ((end/30) < 6):\n",
+        "      end = 0\n",
+        "    else:\n",
+        "      end = 1\n",
+        "  return end"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Oln3Xj-9t-Y6",
+        "colab_type": "text"
+      },
+      "source": [
+        "## **3.3. HTML and JavaScript based Features**\n",
+        "\n",
+        "Many features can be extracted that come under this category. Out of them, below mentioned were considered for this project.\n",
+        "\n",
+        "*   IFrame Redirection\n",
+        "*   Status Bar Customization\n",
+        "*   Disabling Right Click\n",
+        "*   Website Forwarding\n",
+        "\n",
+        "Each of these features are explained and the coded below:"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "lw0JmOGEQPwb",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# importing required packages for this section\n",
+        "import requests"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "RES6bSWPy-Bj",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **3.3.1. IFrame Redirection**\n",
+        "\n",
+        "IFrame is an HTML tag used to display an additional webpage into one that is currently shown. Phishers can make use of the “iframe” tag and make it invisible i.e. without frame borders. In this regard, phishers make use of the “frameBorder” attribute which causes the browser to render a visual delineation. \n",
+        "\n",
+        "If the iframe is empty or repsonse is not found then, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "F2gpZEMSQGpu",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 15. IFrame Redirection (iFrame)\n",
+        "def iframe(response):\n",
+        "  if response == \"\":\n",
+        "      return 1\n",
+        "  else:\n",
+        "      if re.findall(r\"[<iframe>|<frameBorder>]\", response.text):\n",
+        "          return 0\n",
+        "      else:\n",
+        "          return 1"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Ggh4ySE0BqjV",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **3.3.2. Status Bar Customization**\n",
+        "\n",
+        "Phishers may use JavaScript to show a fake URL in the status bar to users. To extract this feature, we must dig-out the webpage source code, particularly the “onMouseOver” event, and check if it makes any changes on the status bar\n",
+        "\n",
+        "If the response is empty or onmouseover is found then, the value assigned to this feature is 1 (phishing) or else 0 (legitimate)."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "eapOq2afVGCF",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 16.Checks the effect of mouse over on status bar (Mouse_Over)\n",
+        "def mouseOver(response): \n",
+        "  if response == \"\" :\n",
+        "    return 1\n",
+        "  else:\n",
+        "    if re.findall(\"<script>.+onmouseover.+</script>\", response.text):\n",
+        "      return 1\n",
+        "    else:\n",
+        "      return 0"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "IYgMTh1zBac9",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **3.3.3. Disabling Right Click**\n",
+        "\n",
+        "Phishers use JavaScript to disable the right-click function, so that users cannot view and save the webpage source code. This feature is treated exactly as “Using onMouseOver to hide the Link”. Nonetheless, for this feature, we will search for event “event.button==2” in the webpage source code and check if the right click is disabled.\n",
+        "\n",
+        "If the response is empty or onmouseover is not found then, the value assigned to this feature is 1 (phishing) or else 0 (legitimate).\n",
+        "\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "9x3lR3lFIVj2",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 17.Checks the status of the right click attribute (Right_Click)\n",
+        "def rightClick(response):\n",
+        "  if response == \"\":\n",
+        "    return 1\n",
+        "  else:\n",
+        "    if re.findall(r\"event.button ?== ?2\", response.text):\n",
+        "      return 0\n",
+        "    else:\n",
+        "      return 1"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "1NAnYm0wKKRC",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **3.3.4. Website Forwarding**\n",
+        "The fine line that distinguishes phishing websites from legitimate ones is how many times a website has been redirected. In our dataset, we find that legitimate websites have been redirected one time max. On the other hand, phishing websites containing this feature have been redirected at least 4 times. \n",
+        "\n",
+        "\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "GkpLyDIpKK0W",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# 18.Checks the number of forwardings (Web_Forwards)    \n",
+        "def forwarding(response):\n",
+        "  if response == \"\":\n",
+        "    return 1\n",
+        "  else:\n",
+        "    if len(response.history) <= 2:\n",
+        "      return 0\n",
+        "    else:\n",
+        "      return 1"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "AVtp7WtjdIfv",
+        "colab_type": "text"
+      },
+      "source": [
+        "## **4. Computing URL Features**\n",
+        "\n",
+        "Create a list and a function that calls the other functions and stores all the features of the URL in the list. We will extract the features of each URL and append to this list."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "8GzyvCg2rzWU",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "#Function to extract features\n",
+        "def featureExtraction(url,label):\n",
+        "\n",
+        "  features = []\n",
+        "  #Address bar based features (10)\n",
+        "  features.append(getDomain(url))\n",
+        "  features.append(havingIP(url))\n",
+        "  features.append(haveAtSign(url))\n",
+        "  features.append(getLength(url))\n",
+        "  features.append(getDepth(url))\n",
+        "  features.append(redirection(url))\n",
+        "  features.append(httpDomain(url))\n",
+        "  features.append(tinyURL(url))\n",
+        "  features.append(prefixSuffix(url))\n",
+        "  \n",
+        "  #Domain based features (4)\n",
+        "  dns = 0\n",
+        "  try:\n",
+        "    domain_name = whois.whois(urlparse(url).netloc)\n",
+        "  except:\n",
+        "    dns = 1\n",
+        "\n",
+        "  features.append(dns)\n",
+        "  features.append(web_traffic(url))\n",
+        "  features.append(1 if dns == 1 else domainAge(domain_name))\n",
+        "  features.append(1 if dns == 1 else domainEnd(domain_name))\n",
+        "  \n",
+        "  # HTML & Javascript based features (4)\n",
+        "  try:\n",
+        "    response = requests.get(url)\n",
+        "  except:\n",
+        "    response = \"\"\n",
+        "  features.append(iframe(response))\n",
+        "  features.append(mouseOver(response))\n",
+        "  features.append(rightClick(response))\n",
+        "  features.append(forwarding(response))\n",
+        "  features.append(label)\n",
+        "  \n",
+        "  return features"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "-v0QtVxld0Qq",
+        "colab_type": "text"
+      },
+      "source": [
+        "### **4.1. Legitimate URLs:**\n",
+        "\n",
+        "Now, feature extraction is done on legitimate URLs."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "s_2AX4OPeJRP",
+        "colab_type": "code",
+        "outputId": "a4ac4615-e723-4969-d3c4-c7eab93515e7",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "legiurl.shape"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(5000, 1)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 33
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "BKNg26HEP5kN",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "#Extracting the feautres & storing them in a list\n",
+        "legi_features = []\n",
+        "label = 0\n",
+        "\n",
+        "for i in range(0, 5000):\n",
+        "  url = legiurl['URLs'][i]\n",
+        "  legi_features.append(featureExtraction(url,label))"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "DSuxYREMi0fr",
+        "colab_type": "code",
+        "outputId": "de1e393b-ed2b-4021-a05b-d5b696852365",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 220
+        }
+      },
+      "source": [
+        "#converting the list to dataframe\n",
+        "feature_names = ['Domain', 'Have_IP', 'Have_At', 'URL_Length', 'URL_Depth','Redirection', \n",
+        "                      'https_Domain', 'TinyURL', 'Prefix/Suffix', 'DNS_Record', 'Web_Traffic', \n",
+        "                      'Domain_Age', 'Domain_End', 'iFrame', 'Mouse_Over','Right_Click', 'Web_Forwards', 'Label']\n",
+        "\n",
+        "legitimate = pd.DataFrame(legi_features, columns= feature_names)\n",
+        "legitimate.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Domain</th>\n",
+              "      <th>Have_IP</th>\n",
+              "      <th>Have_At</th>\n",
+              "      <th>URL_Length</th>\n",
+              "      <th>URL_Depth</th>\n",
+              "      <th>Redirection</th>\n",
+              "      <th>https_Domain</th>\n",
+              "      <th>TinyURL</th>\n",
+              "      <th>Prefix/Suffix</th>\n",
+              "      <th>DNS_Record</th>\n",
+              "      <th>Web_Traffic</th>\n",
+              "      <th>Domain_Age</th>\n",
+              "      <th>Domain_End</th>\n",
+              "      <th>iFrame</th>\n",
+              "      <th>Mouse_Over</th>\n",
+              "      <th>Right_Click</th>\n",
+              "      <th>Web_Forwards</th>\n",
+              "      <th>Label</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>graphicriver.net</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>ecnavi.jp</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>hubpages.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>extratorrent.cc</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>3</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>icicibank.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>3</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "             Domain  Have_IP  Have_At  ...  Right_Click  Web_Forwards  Label\n",
+              "0  graphicriver.net        0        0  ...            1             0      0\n",
+              "1         ecnavi.jp        0        0  ...            1             0      0\n",
+              "2      hubpages.com        0        0  ...            1             0      0\n",
+              "3   extratorrent.cc        0        0  ...            1             0      0\n",
+              "4     icicibank.com        0        0  ...            1             0      0\n",
+              "\n",
+              "[5 rows x 18 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 35
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "1jVcLHvXC031",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# Storing the extracted legitimate URLs fatures to csv file\n",
+        "legitimate.to_csv('legitimate.csv', index= False)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "colab_type": "text",
+        "id": "vrZJo_aboeGb"
+      },
+      "source": [
+        "### **4.2. Phishing URLs:**\n",
+        "\n",
+        "Now, feature extraction is performed on phishing URLs."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab_type": "code",
+        "outputId": "953c12ff-7f25-4491-ce67-ffcf4b1251b0",
+        "id": "PSKf1PCeoeGd",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "phishurl.shape"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(5000, 8)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 37
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab_type": "code",
+        "id": "WGhZMkbaoeGh",
+        "colab": {}
+      },
+      "source": [
+        "#Extracting the feautres & storing them in a list\n",
+        "phish_features = []\n",
+        "label = 1\n",
+        "for i in range(0, 5000):\n",
+        "  url = phishurl['url'][i]\n",
+        "  phish_features.append(featureExtraction(url,label))"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab_type": "code",
+        "id": "1brvc6kmoeGk",
+        "outputId": "58a2e2cd-886f-414a-e2c6-2e5b7894efdd",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 237
+        }
+      },
+      "source": [
+        "#converting the list to dataframe\n",
+        "feature_names = ['Domain', 'Have_IP', 'Have_At', 'URL_Length', 'URL_Depth','Redirection', \n",
+        "                      'https_Domain', 'TinyURL', 'Prefix/Suffix', 'DNS_Record', 'Web_Traffic', \n",
+        "                      'Domain_Age', 'Domain_End', 'iFrame', 'Mouse_Over','Right_Click', 'Web_Forwards', 'Label']\n",
+        "\n",
+        "phishing = pd.DataFrame(phish_features, columns= feature_names)\n",
+        "phishing.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Domain</th>\n",
+              "      <th>Have_IP</th>\n",
+              "      <th>Have_At</th>\n",
+              "      <th>URL_Length</th>\n",
+              "      <th>URL_Depth</th>\n",
+              "      <th>Redirection</th>\n",
+              "      <th>https_Domain</th>\n",
+              "      <th>Tiny_URL</th>\n",
+              "      <th>Prefix/Suffix</th>\n",
+              "      <th>DNS_Record</th>\n",
+              "      <th>Web_Traffic</th>\n",
+              "      <th>Domain_Age</th>\n",
+              "      <th>Domain_End</th>\n",
+              "      <th>iFrame</th>\n",
+              "      <th>Mouse_Over</th>\n",
+              "      <th>Right_Click</th>\n",
+              "      <th>Web_Forwards</th>\n",
+              "      <th>Label</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>eevee.tv</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>4</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>appleid.apple.com-sa.pm</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>grandcup.xyz</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>villa-azzurro.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>mygpstrip.net</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>2</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                    Domain  Have_IP  Have_At  ...  Right_Click  Web_Forwards  Label\n",
+              "0                 eevee.tv        0        0  ...            1             0      1\n",
+              "1  appleid.apple.com-sa.pm        0        0  ...            1             0      1\n",
+              "2             grandcup.xyz        0        0  ...            1             1      1\n",
+              "3        villa-azzurro.com        0        0  ...            1             0      1\n",
+              "4            mygpstrip.net        0        0  ...            1             0      1\n",
+              "\n",
+              "[5 rows x 18 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 40
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "UhBbG2O7E30d",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# Storing the extracted legitimate URLs fatures to csv file\n",
+        "phishing.to_csv('phishing.csv', index= False)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "DB43ozsPq-6c",
+        "colab_type": "text"
+      },
+      "source": [
+        "## **5. Final Dataset**\n",
+        "\n",
+        "In the above section we formed two dataframes of legitimate & phishing URL features. Now, we will combine them to a single dataframe and export the data to csv file for the Machine Learning training done in other notebook. "
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "ktJNvDY5sUsX",
+        "colab_type": "code",
+        "outputId": "b64aa1a8-59a1-44a9-92d4-fc9cd811521b",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 220
+        }
+      },
+      "source": [
+        "#Concatenating the dataframes into one \n",
+        "urldata = pd.concat([legitimate, phishing]).reset_index(drop=True)\n",
+        "urldata.head()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Domain</th>\n",
+              "      <th>Have_IP</th>\n",
+              "      <th>Have_At</th>\n",
+              "      <th>URL_Length</th>\n",
+              "      <th>URL_Depth</th>\n",
+              "      <th>Redirection</th>\n",
+              "      <th>https_Domain</th>\n",
+              "      <th>TinyURL</th>\n",
+              "      <th>Prefix/Suffix</th>\n",
+              "      <th>DNS_Record</th>\n",
+              "      <th>Web_Traffic</th>\n",
+              "      <th>Domain_Age</th>\n",
+              "      <th>Domain_End</th>\n",
+              "      <th>iFrame</th>\n",
+              "      <th>Mouse_Over</th>\n",
+              "      <th>Right_Click</th>\n",
+              "      <th>Web_Forwards</th>\n",
+              "      <th>Label</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>graphicriver.net</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>ecnavi.jp</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>hubpages.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>extratorrent.cc</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>3</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>icicibank.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>3</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "             Domain  Have_IP  Have_At  ...  Right_Click  Web_Forwards  Label\n",
+              "0  graphicriver.net        0        0  ...            1             0      0\n",
+              "1         ecnavi.jp        0        0  ...            1             0      0\n",
+              "2      hubpages.com        0        0  ...            1             0      0\n",
+              "3   extratorrent.cc        0        0  ...            1             0      0\n",
+              "4     icicibank.com        0        0  ...            1             0      0\n",
+              "\n",
+              "[5 rows x 18 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 45
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "u1Viw3jKh3_o",
+        "colab_type": "code",
+        "outputId": "eb924dbb-e26a-4711-a46a-3e39b4a37718",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 271
+        }
+      },
+      "source": [
+        "urldata.tail()"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Domain</th>\n",
+              "      <th>Have_IP</th>\n",
+              "      <th>Have_At</th>\n",
+              "      <th>URL_Length</th>\n",
+              "      <th>URL_Depth</th>\n",
+              "      <th>Redirection</th>\n",
+              "      <th>https_Domain</th>\n",
+              "      <th>TinyURL</th>\n",
+              "      <th>Prefix/Suffix</th>\n",
+              "      <th>DNS_Record</th>\n",
+              "      <th>Web_Traffic</th>\n",
+              "      <th>Domain_Age</th>\n",
+              "      <th>Domain_End</th>\n",
+              "      <th>iFrame</th>\n",
+              "      <th>Mouse_Over</th>\n",
+              "      <th>Right_Click</th>\n",
+              "      <th>Web_Forwards</th>\n",
+              "      <th>Label</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>9995</th>\n",
+              "      <td>wvk12-my.sharepoint.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>5</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9996</th>\n",
+              "      <td>adplife.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>4</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9997</th>\n",
+              "      <td>kurortnoye.com.ua</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>3</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9998</th>\n",
+              "      <td>norcaltc-my.sharepoint.com</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>5</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9999</th>\n",
+              "      <td>sieck-kuehlsysteme.de</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>4</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "      <td>0</td>\n",
+              "      <td>1</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "                          Domain  Have_IP  ...  Web_Forwards  Label\n",
+              "9995     wvk12-my.sharepoint.com        0  ...             0      1\n",
+              "9996                 adplife.com        0  ...             0      1\n",
+              "9997           kurortnoye.com.ua        0  ...             0      1\n",
+              "9998  norcaltc-my.sharepoint.com        0  ...             0      1\n",
+              "9999       sieck-kuehlsysteme.de        0  ...             0      1\n",
+              "\n",
+              "[5 rows x 18 columns]"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 46
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "1NNxgbVCr7vt",
+        "colab_type": "code",
+        "outputId": "3064082c-4508-4579-8128-bff9842a04b7",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 35
+        }
+      },
+      "source": [
+        "urldata.shape"
+      ],
+      "execution_count": 0,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "(10000, 18)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 47
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "596496VUrhRI",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "# Storing the data in CSV file\n",
+        "urldata.to_csv('urldata.csv', index=False)"
+      ],
+      "execution_count": 0,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "srm3VLlHrmFN",
+        "colab_type": "text"
+      },
+      "source": [
+        "## **6. Conclusion**\n",
+        "\n",
+        "With this the objective of this notebook is achieved. We finally extracted 18 features for 10,000 URL which has 5000 phishing & 5000 legitimate URLs."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ybur8dewifEw",
+        "colab_type": "text"
+      },
+      "source": [
+        "## **7. References**\n",
+        "\n",
+        "* https://archive.ics.uci.edu/ml/datasets/Phishing+Websites "
+      ]
+    }
+  ]
+}
